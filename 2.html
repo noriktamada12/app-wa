@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat App - Dark Mode</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ==== STYLE SAMA SEPERTI PUNYAMU ==== */
+    * {margin:0;padding:0;box-sizing:border-box;}
+    body {
+      font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff;
+      height:100vh;overflow:hidden;
+    }
+    .container {
+      max-width:600px;margin:0 auto;height:100vh;
+      display:flex;flex-direction:column;
+      background:#111;box-shadow:0 0 40px rgba(0,0,0,0.5);
+    }
+    .header {background:#1a1a1a;padding:15px 20px;display:flex;align-items:center;gap:15px;border-bottom:1px solid #2a2a2a;}
+    .avatar {width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;}
+    .header-info {flex:1;}
+    .header-name {font-weight:600;font-size:16px;margin-bottom:2px;}
+    .header-status {font-size:12px;color:#888;display:flex;align-items:center;gap:6px;}
+    .status-dot {width:8px;height:8px;border-radius:50%;background:#888;}
+    .status-dot.online {background:#25d366;box-shadow:0 0 8px #25d366;}
+    .delete-btn {background:#2a2a2a;border:none;color:#ff4444;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .3s;}
+    .delete-btn:hover {background:#ff4444;color:white;}
+    .chat-area {flex:1;overflow-y:auto;padding:20px;background:#0a0a0a;scrollbar-width:thin;scrollbar-color:#2a2a2a #0a0a0a;}
+    .chat-area::-webkit-scrollbar{width:6px;}
+    .chat-area::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:3px;}
+    .message {display:flex;margin-bottom:16px;animation:fadeIn .3s ease;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    .message.sent{justify-content:flex-end;}
+    .message-bubble{max-width:70%;padding:10px 14px;border-radius:12px;position:relative;word-wrap:break-word;}
+    .message.received .message-bubble{background:#1a1a1a;border-bottom-left-radius:4px;}
+    .message.sent .message-bubble{background:#667eea;border-bottom-right-radius:4px;}
+    .message-image{max-width:100%;border-radius:8px;margin-bottom:5px;cursor:pointer;transition:transform .2s;}
+    .message-image:hover{transform:scale(1.02);}
+    .message-text{font-size:14px;line-height:1.4;margin-bottom:4px;}
+    .message-time{font-size:11px;color:rgba(255,255,255,0.5);text-align:right;}
+    .input-area{background:#1a1a1a;padding:15px 20px;display:flex;gap:10px;border-top:1px solid #2a2a2a;}
+    .input-wrapper{flex:1;display:flex;gap:10px;background:#0a0a0a;border-radius:24px;padding:8px 16px;align-items:center;}
+    .image-btn{background:none;border:none;color:#888;cursor:pointer;font-size:20px;padding:4px;transition:color .3s;}
+    .image-btn:hover{color:#667eea;}
+    #messageInput{flex:1;background:none;border:none;color:white;font-size:14px;outline:none;font-family:'Inter',sans-serif;}
+    #messageInput::placeholder{color:#555;}
+    .send-btn{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;color:white;width:45px;height:45px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:transform .2s,box-shadow .2s;}
+    .send-btn:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(102,126,234,0.4);}
+    .send-btn:active{transform:scale(0.95);}
+    .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:flex;align-items:center;justify-content:center;z-index:1000;}
+    .modal-content{background:#1a1a1a;padding:40px;border-radius:16px;max-width:400px;width:90%;text-align:center;}
+    .modal h2{margin-bottom:10px;font-size:24px;}
+    .modal p{color:#888;margin-bottom:30px;font-size:14px;}
+    .modal input{width:100%;padding:12px 16px;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;color:white;font-size:14px;margin-bottom:15px;}
+    .modal input:focus{outline:none;border-color:#667eea;}
+    .modal button{width:100%;padding:12px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border:none;border-radius:8px;color:white;font-weight:600;cursor:pointer;transition:transform .2s;}
+    .modal button:hover{transform:translateY(-2px);}
+    .hidden{display:none;}
+    .notification{position:fixed;top:20px;right:20px;background:#1a1a1a;padding:15px 20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;animation:slideIn .3s ease;z-index:999;border:1px solid #2a2a2a;}
+    @keyframes slideIn{from{transform:translateX(400px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+    .notification-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;font-weight:600;}
+    .notification-content h4{font-size:14px;margin-bottom:2px;}
+    .notification-content p{font-size:12px;color:#888;}
+    .empty-state{text-align:center;color:#555;padding:40px 20px;}
+    .empty-state h3{margin-bottom:10px;}
+    #fileInput{display:none;}
+  </style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <h2>Chat App</h2>
+      <p>Masukkan nama Anda untuk memulai chat</p>
+      <input type="text" id="nameInput" placeholder="Nama Anda" maxlength="20">
+      <button onclick="login()">Mulai Chat</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <div class="container">
+    <div class="header">
+      <div class="avatar" id="partnerAvatar">?</div>
+      <div class="header-info">
+        <div class="header-name" id="partnerName">Menunggu...</div>
+        <div class="header-status">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">offline</span>
+        </div>
+      </div>
+      <button class="delete-btn" onclick="deleteAllChats()">Hapus Chat</button>
+    </div>
+
+    <div class="chat-area" id="chatArea">
+      <div class="empty-state">
+        <h3>👋 Selamat Datang!</h3>
+        <p>Mulai percakapan dengan mengirim pesan</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrapper">
+        <button class="image-btn" onclick="document.getElementById('fileInput').click()">📎</button>
+        <input type="file" id="fileInput" accept="image/*" onchange="sendImage(event)">
+        <input type="text" id="messageInput" placeholder="Ketik pesan..." onkeypress="handleKeyPress(event)">
+      </div>
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let lastMessageCount = 0;
+
+    function initStorage() {
+      if (!localStorage.getItem('chatMessages')) localStorage.setItem('chatMessages', JSON.stringify([]));
+      if (!localStorage.getItem('chatUsers')) localStorage.setItem('chatUsers', JSON.stringify({}));
+    }
+
+    function login() {
+      const name = document.getElementById('nameInput').value.trim();
+      if (!name) return alert('Masukkan nama Anda!');
+
+      currentUser = {
+        id: 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9),
+        name: name,
+        online: true,
+        lastSeen: Date.now()
+      };
+
+      const users = JSON.parse(localStorage.getItem('chatUsers')) || {};
+      users[currentUser.id] = currentUser;
+      localStorage.setItem('chatUsers', JSON.stringify(users));
+
+      document.getElementById('loginModal').classList.add('hidden');
+      startListening();
+      updatePartnerStatus();
+      loadMessages();
+    }
+
+    function startListening() {
+      setInterval(() => {
+        updateUserStatus();
+        updatePartnerStatus();
+        loadMessages();
+      }, 1000);
+    }
+
+    function updateUserStatus() {
+      if (!currentUser) return;
+      const users = JSON.parse(localStorage.getItem('chatUsers')) || {};
+      if (users[currentUser.id]) {
+        users[currentUser.id].lastSeen = Date.now();
+        users[currentUser.id].online = true;
+        localStorage.setItem('chatUsers', JSON.stringify(users));
+      }
+    }
+
+    function updatePartnerStatus() {
+      if (!currentUser) return;
+      const users = JSON.parse(localStorage.getItem('chatUsers')) || {};
+      const userIds = Object.keys(users);
+      const partnerId = userIds.find(id => id !== currentUser.id);
+
+      const nameEl = document.getElementById('partnerName');
+      const avatarEl = document.getElementById('partnerAvatar');
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+
+      if (!partnerId) {
+        nameEl.textContent = "Menunggu...";
+        avatarEl.textContent = "?";
+        statusDot.classList.remove("online");
+        statusText.textContent = "offline";
+        return;
+      }
+
+      const partner = users[partnerId];
+      nameEl.textContent = partner.name;
+      avatarEl.textContent = partner.name[0].toUpperCase();
+
+      const isOnline = (Date.now() - partner.lastSeen) < 5000;
+      if (isOnline) {
+        statusDot.classList.add('online');
+        statusText.textContent = 'online';
+      } else {
+        statusDot.classList.remove('online');
+        statusText.textContent = 'offline';
+      }
+    }
+
+    function loadMessages() {
+      if (!currentUser) return;
+      const chatArea = document.getElementById('chatArea');
+      const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+
+      if (messages.length > lastMessageCount) {
+        const newMsg = messages[messages.length - 1];
+        if (newMsg.senderId !== currentUser.id) showNotification(newMsg);
+      }
+      lastMessageCount = messages.length;
+
+      chatArea.innerHTML = '';
+
+      if (messages.length === 0) {
+        chatArea.innerHTML = `
+          <div class="empty-state">
+            <h3>👋 Selamat Datang!</h3>
+            <p>Mulai percakapan dengan mengirim pesan</p>
+          </div>`;
+        return;
+      }
+
+      messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `message ${msg.senderId === currentUser.id ? 'sent' : 'received'}`;
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+
+        if (msg.image) {
+          const img = document.createElement('img');
+          img.src = msg.image;
+          img.className = 'message-image';
+          img.onclick = () => window.open(msg.image, '_blank');
+          bubble.appendChild(img);
+        }
+        if (msg.text) {
+          const txt = document.createElement('div');
+          txt.className = 'message-text';
+          txt.textContent = msg.text;
+          bubble.appendChild(txt);
+        }
+        const time = document.createElement('div');
+        time.className = 'message-time';
+        time.textContent = formatTime(msg.timestamp);
+        bubble.appendChild(time);
+        div.appendChild(bubble);
+        chatArea.appendChild(div);
+      });
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function sendMessage() {
+      if (!currentUser) return;
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const msg = {
+        id: 'msg_' + Date.now(),
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        text,
+        timestamp: Date.now()
+      };
+
+      const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+      messages.push(msg);
+      localStorage.setItem('chatMessages', JSON.stringify(messages));
+      input.value = '';
+      loadMessages();
+    }
+
+    function sendImage(event) {
+      if (!currentUser) return;
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const msg = {
+          id: 'msg_' + Date.now(),
+          senderId: currentUser.id,
+          senderName: currentUser.name,
+          image: e.target.result,
+          timestamp: Date.now()
+        };
+        const messages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        messages.push(msg);
+        localStorage.setItem('chatMessages', JSON.stringify(messages));
+        loadMessages();
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+
+    function deleteAllChats() {
+      if (confirm('Hapus semua pesan?')) {
+        localStorage.setItem('chatMessages', JSON.stringify([]));
+        lastMessageCount = 0;
+        loadMessages();
+      }
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') sendMessage();
+    }
+
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function showNotification(msg) {
+      const notif = document.createElement('div');
+      notif.className = 'notification';
+      notif.innerHTML = `
+        <div class="notification-avatar">${msg.senderName[0].toUpperCase()}</div>
+        <div class="notification-content">
+          <h4>${msg.senderName}</h4>
+          <p>${msg.text || '📷 Gambar'}</p>
+        </div>`;
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 3000);
+    }
+
+    initStorage();
+  </script>
+</body>
+</html>
